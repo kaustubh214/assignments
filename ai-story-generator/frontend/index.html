@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Story Generator</title>
+    <style>
+      :root {
+        --bg: #0e0e0f;
+        --surface: #18181b;
+        --surface2: #1e1e22;
+        --border: #2a2a2e;
+        --text: #e8e6e1;
+        --muted: #6b6b76;
+        --accent: #6366f1;
+        --accent-dim: #4f52c4;
+        --success: #22c55e;
+        --danger: #f87171;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Georgia", serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 3rem 1rem 4rem;
+      }
+
+      /* ── Header ── */
+      .header {
+        text-align: center;
+        margin-bottom: 2.5rem;
+      }
+      .header h1 {
+        font-size: 2.4rem;
+        font-weight: 400;
+        letter-spacing: -0.03em;
+        margin-bottom: 0.4rem;
+      }
+      .header h1 span {
+        color: var(--accent);
+      }
+      .header p {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+      }
+
+      /* ── Card ── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1.75rem;
+        width: 100%;
+        max-width: 660px;
+        margin-bottom: 1.5rem;
+      }
+
+      /* ── Form elements ── */
+      label {
+        display: block;
+        font-family: monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        color: var(--muted);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+
+      select,
+      textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 14px;
+        color: var(--text);
+        font-size: 0.9rem;
+        font-family: inherit;
+        margin-bottom: 1.25rem;
+        outline: none;
+        transition: border-color 0.2s;
+        appearance: none;
+      }
+      select:focus,
+      textarea:focus {
+        border-color: var(--accent);
+      }
+      select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6b76' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+
+      /* ── Sliders ── */
+      .sliders-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+      }
+      .slider-group label {
+        margin-bottom: 10px;
+      }
+      .slider-track {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      input[type="range"] {
+        flex: 1;
+        -webkit-appearance: none;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--border);
+        outline: none;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        transition: transform 0.15s;
+      }
+      input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+      }
+      .val {
+        font-family: monospace;
+        font-size: 0.85rem;
+        color: var(--accent);
+        min-width: 38px;
+        text-align: right;
+      }
+
+      /* ── Genre chips ── */
+      .genre-chips {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+      .chip {
+        padding: 6px 16px;
+        border: 1px solid var(--border);
+        border-radius: 99px;
+        font-size: 0.82rem;
+        font-family: monospace;
+        cursor: pointer;
+        background: transparent;
+        color: var(--muted);
+        transition: all 0.18s;
+        letter-spacing: 0.02em;
+      }
+      .chip.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(99, 102, 241, 0.1);
+      }
+      .chip:hover:not(.active) {
+        border-color: #3a3a40;
+        color: var(--text);
+      }
+
+      /* ── Button ── */
+      .generate-btn {
+        width: 100%;
+        padding: 13px;
+        background: var(--accent);
+        border: none;
+        border-radius: 9px;
+        color: #fff;
+        font-size: 1rem;
+        font-family: "Georgia", serif;
+        cursor: pointer;
+        letter-spacing: 0.01em;
+        transition:
+          background 0.2s,
+          transform 0.1s;
+        position: relative;
+        overflow: hidden;
+      }
+      .generate-btn:hover:not(:disabled) {
+        background: var(--accent-dim);
+      }
+      .generate-btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+      .generate-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
+
+      /* ── Status ── */
+      .status {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        margin-top: 1rem;
+        font-family: monospace;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .status.show {
+        display: flex;
+      }
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        animation: pulse 1s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+
+      /* ── Output ── */
+      .output-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        width: 100%;
+        max-width: 660px;
+        overflow: hidden;
+        animation: fadeUp 0.3s ease;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .output-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface2);
+      }
+      .output-meta {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .output-genre {
+        font-family: monospace;
+        font-size: 0.7rem;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        text-transform: uppercase;
+      }
+      .output-prompt {
+        font-size: 0.78rem;
+        color: var(--muted);
+        font-family: monospace;
+        max-width: 420px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .copy-story-btn {
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--muted);
+        font-family: monospace;
+        font-size: 0.7rem;
+        padding: 4px 10px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .copy-story-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .output-body {
+        padding: 1.5rem;
+        font-size: 0.88rem;
+        line-height: 1.85;
+        color: var(--text);
+        white-space: pre-wrap;
+        font-family: "Georgia", serif;
+      }
+
+      /* ── Error ── */
+      .error-box {
+        background: rgba(248, 113, 113, 0.07);
+        border: 1px solid rgba(248, 113, 113, 0.25);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        font-family: monospace;
+        font-size: 0.82rem;
+        color: var(--danger);
+        margin-top: 1rem;
+        display: none;
+      }
+      .error-box.show {
+        display: block;
+      }
+
+      /* ── Footer ── */
+      footer {
+        margin-top: 3rem;
+        font-family: monospace;
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.05em;
+        text-align: center;
+      }
+
+      @media (max-width: 500px) {
+        .sliders-row {
+          grid-template-columns: 1fr;
+        }
+        .header h1 {
+          font-size: 1.8rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>AI <span>Story</span> Generator</h1>
+      <p>GPT-2 · HUGGINGFACE TRANSFORMERS · FLASK</p>
+    </div>
+
+    <div class="card">
+      <!-- Genre chips -->
+      <label>Genre</label>
+      <div class="genre-chips">
+        <button
+          class="chip active"
+          data-genre="space"
+          onclick="selectGenre(this)"
+        >
+          🚀 Space
+        </button>
+        <button class="chip" data-genre="horror" onclick="selectGenre(this)">
+          👻 Horror
+        </button>
+        <button
+          class="chip"
+          data-genre="motivational"
+          onclick="selectGenre(this)"
+        >
+          💪 Motivational
+        </button>
+      </div>
+
+      <!-- Custom prompt -->
+      <label
+        >Custom prompt
+        <span style="color: #3a3a40; font-family: monospace"
+          >(optional — overrides genre default)</span
+        ></label
+      >
+      <textarea
+        id="prompt"
+        placeholder="Leave blank to use the default genre prompt..."
+      ></textarea>
+
+      <!-- Sliders -->
+      <div class="sliders-row">
+        <div class="slider-group">
+          <label
+            >Max length —
+            <span id="lenVal" style="color: var(--accent)">200</span>
+            tokens</label
+          >
+          <div class="slider-track">
+            <input
+              type="range"
+              id="maxLen"
+              min="50"
+              max="400"
+              step="10"
+              value="200"
+              oninput="
+                document.getElementById('lenVal').textContent = this.value
+              "
+            />
+          </div>
+        </div>
+        <div class="slider-group">
+          <label
+            >Temperature —
+            <span id="tempVal" style="color: var(--accent)">0.9</span></label
+          >
+          <div class="slider-track">
+            <input
+              type="range"
+              id="temp"
+              min="0.1"
+              max="1.5"
+              step="0.1"
+              value="0.9"
+              oninput="
+                document.getElementById('tempVal').textContent = parseFloat(
+                  this.value,
+                ).toFixed(1)
+              "
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Button -->
+      <button class="generate-btn" id="btn" onclick="generate()">
+        Generate story
+      </button>
+
+      <!-- Status -->
+      <div class="status" id="status">
+        <div class="dot"></div>
+        <span>Generating... this may take 10–30 seconds</span>
+      </div>
+
+      <!-- Error -->
+      <div class="error-box" id="errBox"></div>
+    </div>
+
+    <!-- Output -->
+    <div class="output-card" id="outputCard" style="display: none">
+      <div class="output-header">
+        <div class="output-meta">
+          <span class="output-genre" id="outGenre"></span>
+          <span class="output-prompt" id="outPrompt"></span>
+        </div>
+        <button class="copy-story-btn" onclick="copyStory()">copy</button>
+      </div>
+      <div class="output-body" id="outputBody"></div>
+    </div>
+
+    <script>
+      let activeGenre = "space";
+
+      function selectGenre(el) {
+        document
+          .querySelectorAll(".chip")
+          .forEach((c) => c.classList.remove("active"));
+        el.classList.add("active");
+        activeGenre = el.dataset.genre;
+      }
+
+      async function generate() {
+        const btn = document.getElementById("btn");
+        const status = document.getElementById("status");
+        const errBox = document.getElementById("errBox");
+        const outCard = document.getElementById("outputCard");
+
+        // reset
+        btn.disabled = true;
+        status.classList.add("show");
+        errBox.classList.remove("show");
+        outCard.style.display = "none";
+
+        const payload = {
+          genre: activeGenre,
+          prompt: document.getElementById("prompt").value.trim(),
+          max_length: parseInt(document.getElementById("maxLen").value),
+          temperature: parseFloat(document.getElementById("temp").value),
+          num_return_sequences: 1,
+        };
+
+        try {
+          const res = await fetch("http://localhost:5000/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+          const data = await res.json();
+
+          document.getElementById("outGenre").textContent =
+            data.genre.toUpperCase();
+          document.getElementById("outPrompt").textContent =
+            "Prompt: " + data.prompt;
+          document.getElementById("outputBody").textContent = data.stories[0];
+
+          outCard.style.display = "block";
+        } catch (err) {
+          errBox.textContent =
+            "⚠ Could not reach Flask backend at localhost:5000. Make sure you ran: python backend/app.py";
+          errBox.classList.add("show");
+        } finally {
+          btn.disabled = false;
+          status.classList.remove("show");
+        }
+      }
+
+      function copyStory() {
+        const text = document.getElementById("outputBody").textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = document.querySelector(".copy-story-btn");
+          btn.textContent = "copied!";
+          setTimeout(() => (btn.textContent = "copy"), 1800);
+        });
+      }
+    </script>
+  </body>
+</html>

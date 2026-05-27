@@ -1,0 +1,90 @@
+# ============================================================
+#  Fine-Tuning Configuration — Finance & Tech Domain LLM
+#  Project: Domain-Specific AI Model (Mahesh Sale Assignment)
+# ============================================================
+
+# ── Model Selection ──────────────────────────────────────────
+model:
+  # Option A: Meta LLaMA-3 8B (recommended — better instruction following)
+  base_model: "meta-llama/Meta-Llama-3-8B-Instruct"
+  # Option B: Mistral 7B (uncomment to use instead)
+  # base_model: "mistralai/Mistral-7B-Instruct-v0.3"
+
+  # HuggingFace Hub token (set via env var HF_TOKEN or enter here)
+  hf_token: null   # reads from env HF_TOKEN by default
+
+# ── Quantization (QLoRA — 4-bit) ────────────────────────────
+quantization:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "bfloat16"   # use float16 on older GPUs
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_use_double_quant: true
+
+# ── LoRA Configuration ───────────────────────────────────────
+lora:
+  r: 16                      # LoRA rank — higher = more params, better fit
+  lora_alpha: 32             # Scaling factor; usually 2 × r
+  lora_dropout: 0.05         # Regularization
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:            # Attention projection layers to fine-tune
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"            # Include MLP layers for deeper adaptation
+    - "up_proj"
+    - "down_proj"
+
+# ── Dataset ──────────────────────────────────────────────────
+dataset:
+  train_file: "data/combined_dataset.jsonl"
+  val_split: 0.1             # 10% held out for validation
+  max_seq_length: 2048       # Max token length per sample
+  instruction_template: |
+    ### Instruction:
+    {instruction}
+
+    ### Input:
+    {input}
+
+    ### Response:
+    {output}
+
+# ── Training Hyperparameters ─────────────────────────────────
+training:
+  output_dir: "outputs/checkpoints"
+  num_train_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4   # Effective batch = 4 × 4 = 16
+  learning_rate: 0.0002            # 2e-4
+  lr_scheduler_type: "cosine"
+  warmup_ratio: 0.03
+  weight_decay: 0.001
+  fp16: false
+  bf16: true                       # Use bf16 on A100/H100; set fp16: true for T4/V100
+  max_grad_norm: 0.3
+  logging_steps: 10
+  save_steps: 100
+  eval_steps: 100
+  save_total_limit: 3              # Keep latest 3 checkpoints
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  report_to: "wandb"               # Set to "none" to disable W&B logging
+  run_name: "finance-tech-llm-v1"
+
+# ── Final Model ──────────────────────────────────────────────
+output:
+  final_model_dir: "outputs/final_model"
+  push_to_hub: false               # Set true to upload to HuggingFace Hub
+  hub_model_id: "your-username/finance-tech-llm"
+
+# ── Inference Defaults ───────────────────────────────────────
+inference:
+  max_new_tokens: 512
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+  repetition_penalty: 1.1
+  do_sample: true

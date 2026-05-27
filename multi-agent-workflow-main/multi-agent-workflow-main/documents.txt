@@ -1,0 +1,11 @@
+Artificial Intelligence is transforming industries worldwide.
+
+Machine Learning is a subset of AI that enables systems to learn from data.
+
+Retrieval-Augmented Generation combines information retrieval with language generation.
+
+Transformers are deep learning architectures introduced by Google in 2017.
+
+Hugging Face provides open-source NLP models and tools.
+
+Multi-agent systems use multiple AI agents working together to solve problems.
